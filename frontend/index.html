@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Spirit Connect Chatbot</title>
+    <style>
+      /* Reset and base */
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 2rem;
+        background: #f9fafb;
+        color: #2c3e50;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+      }
+      h1 {
+        margin-bottom: 1rem;
+        font-weight: 700;
+        color: #34495e;
+        text-align: center;
+        user-select: none;
+      }
+
+      #chatbox {
+        width: 100%;
+        max-width: 600px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        padding: 1rem 1.5rem;
+      }
+
+      #chat {
+        flex-grow: 1;
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 10px;
+      }
+
+      .message {
+        max-width: 80%;
+        margin: 0.5rem 0;
+        padding: 12px 18px;
+        border-radius: 20px;
+        line-height: 1.4;
+        font-size: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        user-select: text;
+        word-wrap: break-word;
+      }
+
+      .user {
+        background: #d1f0fd;
+        align-self: flex-end;
+        color: #05668d;
+        border-bottom-right-radius: 0;
+      }
+
+      .bot {
+        background: #f0f4f8;
+        align-self: flex-start;
+        color: #34495e;
+        border-bottom-left-radius: 0;
+      }
+
+      form {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      input[type="text"] {
+        flex-grow: 1;
+        padding: 14px 16px;
+        border: 1.5px solid #ccc;
+        border-radius: 30px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+      }
+      input[type="text"]:focus {
+        outline: none;
+        border-color: #4caf50;
+        box-shadow: 0 0 5px #4caf50;
+      }
+
+      button {
+        background-color: #4caf50;
+        border: none;
+        border-radius: 30px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0 24px;
+        font-size: 1rem;
+        transition: background-color 0.3s ease;
+        user-select: none;
+      }
+      button:hover:not(:disabled) {
+        background-color: #43a047;
+      }
+      button:disabled {
+        background-color: #a5d6a7;
+        cursor: not-allowed;
+      }
+    </style>
+    <script type="module">
+      import { backend } from 'declarations/backend';
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('form');
+        const input = document.getElementById('userInput');
+        const chat = document.getElementById('chat');
+        const button = form.querySelector('button');
+
+        // Scroll chat to bottom
+        function scrollChatToBottom() {
+          chat.scrollTop = chat.scrollHeight;
+        }
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const question = input.value.trim();
+          if (!question) return;
+
+          // Add user's message
+          const userMessage = document.createElement('div');
+          userMessage.className = 'message user';
+          userMessage.textContent = question;
+          chat.appendChild(userMessage);
+          scrollChatToBottom();
+
+          // Clear and disable input
+          input.value = '';
+          input.disabled = true;
+          button.disabled = true;
+
+          try {
+            // Call backend for response
+            const response = await backend.getCounselingResponse(question);
+
+            // Add bot's message
+            const botMessage = document.createElement('div');
+            botMessage.className = 'message bot';
+            botMessage.textContent = response;
+            chat.appendChild(botMessage);
+            scrollChatToBottom();
+          } catch (err) {
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'message bot';
+            errorMessage.textContent = '🙏 Sorry, there was an error. Please try again later.';
+            chat.appendChild(errorMessage);
+            scrollChatToBottom();
+          } finally {
+            input.disabled = false;
+            button.disabled = false;
+            input.focus();
+          }
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Spirit Connect Chatbot</h1>
+    <main id="chatbox" role="main" aria-label="Chat conversation">
+      <div id="chat" aria-live="polite" aria-relevant="additions"></div>
+      <form aria-label="Send a message">
+        <input
+          id="userInput"
+          type="text"
+          placeholder="Ask about theology, scripture, or faith..."
+          aria-required="true"
+          autocomplete="off"
+          spellcheck="false"
+          autofocus
+        />
+        <button type="submit" aria-label="Send message">Send</button>
+      </form>
+    </main>
+  </body>
+</html>
